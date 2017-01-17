@@ -1,0 +1,15 @@
+{
+  "id": "/docker-image",
+  "cpus": 0.1,
+  "mem": 32,
+  "instances": 1,
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "noimage:idonotexist",
+      "network": "HOST",
+      "privileged": false,
+      "forcePullImage": false
+    }
+  }
+}

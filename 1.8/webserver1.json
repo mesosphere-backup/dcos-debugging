@@ -1,0 +1,18 @@
+{
+  "id": "/my-webserver",
+  "cmd": "echo 'Hello DC/OS' > index.html && python -m http.server 3030",
+  "instances": 1,
+  "cpus": 0.1,
+  "mem": 32,
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "python:3",
+      "network": "HOST"
+    }
+  },
+  "labels": {
+    "HAPROXY_GROUP": "external",
+    "HAPROXY_0_PORT": "10105"
+  }
+}

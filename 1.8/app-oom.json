@@ -1,0 +1,18 @@
+{
+  "id": "app-oom",
+  "cmd": "chmod u+x oomApp && ./oomApp",
+  "instances": 1,
+  "cpus": 1,
+  "mem": 32,
+  "fetch": [
+    {
+      "uri": "https://raw.githubusercontent.com/joerg84/dcos-101/master/oomApp/oomApp"
+    }
+  ],
+  "portDefinitions": [
+    {
+      "protocol": "tcp",
+      "port": 10000
+    }
+  ]
+}

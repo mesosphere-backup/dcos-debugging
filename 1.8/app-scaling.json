@@ -1,0 +1,24 @@
+{
+  "id": "/app-scaling",
+  "cmd": "chmod u+x app2 && ./app2",
+  "instances": 1,
+  "cpus": 1,
+  "mem": 128,
+  "fetch": [
+    {
+      "uri": "https://raw.githubusercontent.com/joerg84/dcos-101/master/app2/app2"
+    }
+  ],
+  "portDefinitions": [
+    {
+      "protocol": "tcp",
+      "port": 10000,
+      "labels": {
+        "VIP_0": "/app-scaling:10000"
+      }
+    }
+  ],
+  "labels": {
+    "HAPROXY_GROUP": "external"
+  }
+}
