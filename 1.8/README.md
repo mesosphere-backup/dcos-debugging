@@ -82,25 +82,27 @@
 
 Prerequisite:
 
-    * [marathon-lb](https://dcos.io/docs/1.8/usage/service-discovery/marathon-lb/) installed on all public nodes
-    * [IP of your public agent](https://dcos.io/docs/1.8/administration/locate-public-agent/)
-    * [Dcos CLI](https://dcos.io/docs/1.8/usage/cli/#docs-article) installed
+* [Marathon-LB](https://dcos.io/docs/1.8/usage/service-discovery/marathon-lb/) installed on all public nodes
+* [IP of your public agent](https://dcos.io/docs/1.8/administration/locate-public-agent/)
+* [DC/OS CLI](https://dcos.io/docs/1.8/usage/cli/#docs-article) installed
 
 
-We want to deploy webserver listening on port 3030, and even set the service port so we can reach it via marathon-lb.
+We want to deploy a webserver listening on port `3030`, and even set the service port to `10105` so we can reach it via marathon-lb.
 
 1. Deploy the file `webserver1.json`
     ```
     dcos marathon app add webserver1.json
     ```
+    This will start the webserver on Port `3030` and also defines a label that marathon-lb uses to bind to the service port `10105` on the public agent.
+
 2. Try to reach it via marathon-lb
 
-    We try to go to http://<public_agent>:10105/ in our browser, but the webapp doesn not show up. So we let us try to figure out why this is not working.
+    We try to go to `http://<public_agent>:10105/` in our browser, but the webapp does not show up. So let us try to figure out why this is not working.
 
 3. Check marathon-lb/HAProxy
-    In order to see if/how marathon-lb has picked up the app, we look at it the HAProxy stats.  These are available on all nodes where marathon-lb is installed: http://<public_ip>:9090/haproxy?stats
+    In order to see if/how marathon-lb has picked up the app, we look at it the HAProxy stats.  These are available on all nodes where marathon-lb is installed: `http://<public_ip>:9090/haproxy?stats`
 
-    a. The page should look similar to the screenshot below. So we can see that marathon-lb has picked up the app. And 10.0.0.212:7727 is used as backend for the service port frontend 10105.
+    a. The page should look similar to the screenshot below. So we can see that marathon-lb has picked up the app. And `10.0.0.212:7727` is used as backend for the service port frontend `10105`.
 
     ![HAProxy stats](img/HAProxy-stats.png "HAProxy stats")
 
@@ -112,9 +114,9 @@ We want to deploy webserver listening on port 3030, and even set the service por
     We should see something similar to:
    `curl: (7) Failed to connect to 10.0.0.212 port 7727: Connection refused`
 
-    So seemingly the app isn't serving on 10.0.0.212:7727, which is the address used by marathon-lb.
+    So seemingly the app isn't serving on `10.0.0.212:7727`, which is the address used by marathon-lb.
 
-5. Check on which port our app ist listening
+5. Check on which port our app is listening
 
     Let us revisit our application definition:
     ```
@@ -128,26 +130,17 @@ We want to deploy webserver listening on port 3030, and even set the service por
     Hello DC/OS
     ```
 
-    So we have identified the problem: Marathon-lb tries to redirect to the random assigned port 7727, while our app is listening on port 3030. Note that, port 3030 is not allocated (as it is not in the app specification), so it might actually happen that another app is already using that port. Also that implies we can only run a single instance per node.
+    So we have identified the problem: marathon-lb tries to redirect to the random assigned port `7727`, while our app is listening on port `3030`. Note that, port `3030` is not allocated (as it is not in the app specification), so it might actually happen that another app is already using that port. Also that implies we can only run a single instance per node.
 
 6. Fixing the problem
     We have two options for fixing this problem
 
     a) Have the application listen to the random port
-        DC/OS will give you the PORT0 environment variable holding the first random port assigned to your app. So we could change out webserver to listen to that port:
-        ```
-        "cmd": "echo 'Hello DC/OS' > index.html && python -m http.server PORT0"
-        ```
+    DC/OS will give you the `PORT0` environment variable holding the first random port assigned to your app. So we could change our webserver to listen to that port:
+    ```
+    "cmd": "echo 'Hello DC/OS' > index.html && python -m http.server PORT0"
+    ```
 
-    b) Sometimes using a random port is not possible, as the application needs to listen to a fixed port (e.g., 3030). In that case we can run our docker container in bridge mode (see here for details on host versus bridge mode). That would mean inside the container network the application can use port 3030, which is mapped to a random port on the host.
+    b) Sometimes using a random port is not possible, as the application needs to listen to a fixed port (e.g., `3030`). In that case we can run our docker container in bridge mode (see [here](https://dcos.io/docs/1.8/usage/marathon/ports/) for details on host versus bridge mode). That would mean inside the container network the application can use port `3030`, which is mapped to a random port on the host.
 
-
-    See webserver2.json for more details.
-
-
-
-
-
-
-
-
+    See `webserver2.json` for more details.
