@@ -3,7 +3,7 @@
     "container": {
         "type": "MESOS",
         "docker": {
-            "image": "library/nginx:1.13"
+            "image": "nginx:1.10"
         }
     },
     "cmd": "sleep 10000",
