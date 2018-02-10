@@ -1,0 +1,13 @@
+{
+    "id": "nginx",
+    "container": {
+        "type": "MESOS",
+        "docker": {
+            "image": "library/nginx:1.13"
+        }
+    },
+    "cmd": "sleep 10000",
+    "cpus": 0.2,
+    "instances": 1,
+    "acceptedResourceRoles": ["slave_public"]
+}
