@@ -226,4 +226,8 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
     ```
 
     If we now check again `http://<public_agent>/`, we should see `Welcome to nginx!`.
+    
+   6. Update the app definition
+   
+   Even though it seems that everything is fine now, the next crucial step would be to update your `nginx.json` by either removing the cmd override or explicitly starting nginx yourself. Otherwise, the failure will occure again as soon as the app is redeployed or scaled.
 
