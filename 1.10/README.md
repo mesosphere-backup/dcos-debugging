@@ -176,7 +176,17 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
 
     Looks like everything is ok here (State equal *R*unning). So let us continue..
 
-4. Check nginx logs
+4. Check whether we can reach the instance from within the cluster
+    ```
+    dcos node ssh --leader --master-proxy
+    curl <public_agent>
+    ```
+    We should see something similar to:
+   `curl: (7) Failed to connect to ...: Connection refused`
+
+    If we are on AWS it might be wort trying to curl both the interal and external IP of the the public agent.
+    
+5. Check nginx logs
 
     ```
     $ dcos task log nginx
@@ -189,7 +199,7 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
 
     Unfortunatly, still nothing helpful...
 
-5. Exec into task
+6. Exec into task
 
     Next, let us interactivly debug the task by launching a shell into the container environment:
     Note, `dcos task exec currently only works with UCR containers. If you are using the docker runtime,
@@ -227,7 +237,7 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
 
     If we now check again `http://<public_agent>/`, we should see `Welcome to nginx!`.
     
-   6. Update the app definition
+7. Update the app definition
    
    Even though it seems that everything is fine now, the next crucial step would be to update your `nginx.json` by either removing the cmd override or explicitly starting nginx yourself. Otherwise, the failure will occure again as soon as the app is redeployed or scaled.
 
