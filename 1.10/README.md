@@ -154,7 +154,7 @@ Prerequisite:
 
 We want to deploy a nginx webserver, but cannot reach nginx (depite it running on a public agent).
 
-1. Deploy the file `nginx.json`
+1. Deploy the file [`nginx.json`](https://github.com/dcos-labs/dcos-debugging/blob/master/1.10/nginx.json).
     ```
     dcos marathon app add https://raw.githubusercontent.com/dcos-labs/dcos-debugging/master/1.10/nginx.json
     ```
