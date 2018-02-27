@@ -1,0 +1,10 @@
+{
+  "id": "/app-scaling-1",
+  "cmd": "sleep 10000",
+  "instances": 1000,
+  "cpus": 1,
+  "mem": 128,
+  "labels": {
+    "HAPROXY_GROUP": "external"
+  }
+}
