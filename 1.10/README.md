@@ -2,42 +2,55 @@
 
 **Exercise 1 - Horizontal Scaling App - Not enough resources**
 
-1. Deploy an application and scale the instances
+1. Deploy an application
+    ```
+    dcos marathon app add app-scaling.json
+    ```
+
+2. Scale the instances to 100
     ```
     dcos marathon app update /app-scaling instances=100
     dcos marathon app list
     dcos marathon deployment list
     ```
 
-2. Look into the Marathon logs. Can you find the reason why the deployment is in waiting state?
+3. Look into the app details. Can you find the reason why the deployment is in waiting state?
     ```
-    dcos node ssh --master-proxy --leader
-    sudo journalctl -flu dcos-marathon | grep app-scaling
+    dcos marathon debug details /app-scaling
+    HOSTNAME    ROLE  CONSTRAINTS  CPUS  MEM  DISK  PORTS  RECEIVED
+    10.0.0.177   ok        ok       -     ok   ok     ok   2018-03-26T13:09:02.156Z
+    10.0.1.239   ok        ok       -     ok   ok     ok   2018-03-26T13:09:02.155Z
+    10.0.3.134   ok        ok       -     ok   ok     ok   2018-03-26T13:09:02.154Z
+    10.0.7.199   -         ok       -     -    ok     -    2018-03-26T13:09:02.155Z
     ```
 
-3. Reset the deployment by forcing the instances to be 1
+4. Reset the deployment by forcing the instances to be 1
     ```
     dcos marathon app update /app-scaling --force instances=1
     ```
 
 **Exercise 2 - Vertical scaling - No matching resources**
 
-1. Now increase the CPU allocation of the app
+1. Now increase the MEM allocation of the app
     ```
-    dcos marathon app update /app-scaling cpus=100
+    dcos marathon app update /app-scaling mem=100000
     dcos marathon app list
     dcos marathon deployment list
     ```
 
-2. Look into the Marathon logs. Can you find the reason why the deployment is in waiting state?
+2. Look into the app details. Can you find the reason why the deployment is in waiting state?
     ```
-    dcos node ssh --master-proxy --leader
-    sudo journalctl -flu dcos-marathon | grep app-scaling
+    dcos marathon debug details /app-scaling
+    HOSTNAME    ROLE  CONSTRAINTS  CPUS  MEM  DISK  PORTS  RECEIVED
+    10.0.0.177   ok        ok       ok    -    ok     ok   2018-03-26T13:35:21.817Z
+    10.0.1.239   ok        ok       ok    -    ok     ok   2018-03-26T13:35:21.817Z
+    10.0.3.134   ok        ok       ok    -    ok     ok   2018-03-26T13:35:21.816Z
+    10.0.7.199   -         ok       -     -    ok     -    2018-03-26T13:35:21.817Z
     ```
 
-3. Reset the deployment by forcing the cpu allocation to be 1
+3. Reset the deployment by forcing the mem allocation to be 128
     ```
-    dcos marathon app update /app-scaling --force cpus=1
+    dcos marathon app update /app-scaling --force mem=128
     ```
 
 **Exercise 3 - OOM Situations**
@@ -81,7 +94,7 @@
 
 Prerequisite:
 
-* [Marathon-LB](https://dcos.io/docs/1.8/usage/service-discovery/marathon-lb/) installed on all public nodes
+* [Marathon-LB](https://docs.mesosphere.com/services/marathon-lb/) installed on all public nodes
 * [IP of your public agent](https://docs.mesosphere.com/1.10/administering-clusters/locate-public-agent/)
 * [DC/OS CLI](https://docs.mesosphere.com/1.10/cli/) installed
 
@@ -137,7 +150,7 @@ We want to deploy a webserver listening on port `3030`, and even set the service
     a) Have the application listen to the random port
     DC/OS will give you the `PORT0` environment variable holding the first random port assigned to your app. So we could change our webserver to listen to that port:
     ```
-    "cmd": "echo 'Hello DC/OS' > index.html && python -m http.server PORT0"
+    "cmd": "echo 'Hello DC/OS' > index.html && python -m http.server $PORT0"
     ```
 
     b) Sometimes using a random port is not possible, as the application needs to listen to a fixed port (e.g., `3030`). In that case we can run our docker container in bridge mode (see [here](https://dcos.io/docs/1.8/usage/marathon/ports/) for details on host versus bridge mode). That would mean inside the container network the application can use port `3030`, which is mapped to a random port on the host.
@@ -151,12 +164,13 @@ Prerequisite:
 
 * [IP of your public agent](https://docs.mesosphere.com/1.10/administering-clusters/locate-public-agent/)
 * [DC/OS CLI](https://docs.mesosphere.com/1.10/cli/) installed
+* [Marathon-LB](https://docs.mesosphere.com/services/marathon-lb/) not installed
 
 We want to deploy a nginx webserver, but cannot reach nginx (depite it running on a public agent).
 
 1. Deploy the file [`nginx.json`](https://github.com/dcos-labs/dcos-debugging/blob/master/1.10/nginx.json).
     ```
-    dcos marathon app add https://raw.githubusercontent.com/dcos-labs/dcos-debugging/master/1.10/nginx.json
+    dcos marathon app add nginx.json
     ```
     This will start the nginx on the public agent.
 
@@ -174,7 +188,7 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
     nginx  10.0.6.146  root    R    nginx.cd3b7ef1-0e9e-11e8-b971-92f543ad2ed3  6a2b8b96-82bb-4ee8-b26a-39d3bb553a73-S0
     ```
 
-    Looks like everything is ok here (State equal *R*unning). So let us continue..
+    Looks like everything is ok here (State equal **R** unning). So let us continue..
 
 4. Check whether we can reach the instance from within the cluster
     ```
@@ -185,7 +199,7 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
    `curl: (7) Failed to connect to ...: Connection refused`
 
     If we are on AWS it might be wort trying to curl both the interal and external IP of the the public agent.
-    
+
 5. Check nginx logs
 
     ```
@@ -197,11 +211,11 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
     Changing root to /var/lib/mesos/slave/provisioner/containers/3f0846e3-9c40-430f-82a6-b217de90ae15/backends/overlay/rootfses/996094c4-9a28-47d7-9678-ccd3c2458bd1
     ```
 
-    Unfortunatly, still nothing helpful...
+    Unfortunately, still nothing helpful...
 
 6. Exec into task
 
-    Next, let us interactivly debug the task by launching a shell into the container environment:
+    Next, let us interactively debug the task by launching a shell into the container environment:
     Note, `dcos task exec currently only works with UCR containers. If you are using the docker runtime,
     you will need too ssh to that node where the task is running and then use `docker exec`.
 
@@ -236,8 +250,7 @@ We want to deploy a nginx webserver, but cannot reach nginx (depite it running o
     ```
 
     If we now check again `http://<public_agent>/`, we should see `Welcome to nginx!`.
-    
-7. Update the app definition
-   
-   Even though it seems that everything is fine now, the next crucial step would be to update your `nginx.json` by either removing the cmd override or explicitly starting nginx yourself. Otherwise, the failure will occure again as soon as the app is redeployed or scaled.
 
+7. Update the app definition
+
+   Even though it seems that everything is fine now, the next crucial step would be to update your `nginx.json` by either removing the cmd override or explicitly starting nginx yourself. Otherwise, the failure will occure again as soon as the app is redeployed or scaled.
